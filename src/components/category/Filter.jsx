@@ -12,7 +12,8 @@ import { useSearchParams } from "react-router-dom";
 import { useProductContext } from "../../context/ProductContext";
 import { motion, AnimatePresence } from "framer-motion";
 
-// utils
+/* ---------------- utils ---------------- */
+
 const slugifyKey = (s = "") =>
   String(s)
     .toLowerCase()
@@ -21,7 +22,7 @@ const slugifyKey = (s = "") =>
     .replace(/(^-|-$)/g, "");
 
 const safeParseFilters = (v) => {
-  // Accepts array or JSON string of [{key, value}]
+  // Accepts array or JSON string of [{ key, value }]
   if (Array.isArray(v)) return v;
   if (typeof v === "string") {
     try {
@@ -34,7 +35,15 @@ const safeParseFilters = (v) => {
   return [];
 };
 
-// Reusable ToggleSection
+// robust: compare by IDs, not slugs
+const idFromSlug = (slug) => {
+  if (!slug) return null;
+  const parts = String(slug).split("-");
+  return parts.length ? parts[parts.length - 1] : null; // keep as string for safe compare
+};
+
+/* ---------------- small UI bits ---------------- */
+
 const ToggleSection = ({ title, children, isOpen, setIsOpen }) => (
   <div className="w-full bg-[#F8F9FB] border-[1.5px] border-[#ECF0F9] rounded-lg p-4 text-sm text-[#182B55] font-medium space-y-4">
     <div
@@ -42,6 +51,21 @@ const ToggleSection = ({ title, children, isOpen, setIsOpen }) => (
       className="flex items-center justify-between cursor-pointer select-none"
     >
       <h2 className="text-lg font-medium text-[#182B55] leading-6">{title}</h2>
+      <svg
+        className={`w-4 h-4 transform transition-transform ${
+          isOpen ? "rotate-180" : ""
+        }`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
     </div>
     {isOpen && (
       <div className="space-y-4 pt-3 border-t-2 border-[#ECF0F9]">
@@ -51,54 +75,27 @@ const ToggleSection = ({ title, children, isOpen, setIsOpen }) => (
   </div>
 );
 
-// Reusable Checkbox
-const Checkbox = ({ id, label, checked, onChange }) => {
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        type="checkbox"
-        id={id}
-        className="peer form-checkbox text-[#3F66BC]"
-        checked={checked}
-        onChange={onChange}
-      />
-      <label
-        htmlFor={id}
-        className="cursor-pointer peer-checked:text-[#3F66BC] text-[16px] leading-6 text-[#182B55] font-medium transition-colors"
-      >
-        {label}
-      </label>
-    </div>
-  );
-};
+const Checkbox = ({ id, label, checked, onChange }) => (
+  <div className="flex items-center gap-2">
+    <input
+      type="checkbox"
+      id={id}
+      className="peer form-checkbox text-[#3F66BC]"
+      checked={checked}
+      onChange={onChange}
+    />
+    <label
+      htmlFor={id}
+      className="cursor-pointer peer-checked:text-[#3F66BC] text-[16px] leading-6 text-[#182B55] font-medium transition-colors"
+    >
+      {label}
+    </label>
+  </div>
+);
 
-const CheckboxUsa = ({ id, label }) => {
-  const { isMadeUsa, setIsMadeUsa } = useProductContext();
-
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        type="checkbox"
-        id={id}
-        className="peer form-checkbox text-[#3F66BC]"
-        checked={isMadeUsa}
-        onChange={() => setIsMadeUsa(!isMadeUsa)}
-      />
-      <label
-        htmlFor={id}
-        className="cursor-pointer peer-checked:text-[#3F66BC] text-[16px] leading-6 text-[#182B55] font-medium transition-colors"
-      >
-        {label}
-      </label>
-    </div>
-  );
-};
-
-const PriceRange = ({ isOpen, setIsOpen }) => {
+const PriceRange = ({ isOpen }) => {
   const [activeThumb, setActiveThumb] = useState(null);
   const containerRef = useRef(null);
-  const minThumbRef = useRef(null);
-  const maxThumbRef = useRef(null);
 
   const { minPrice, setMinPrice, maxPrice, setMaxPrice, maxRangeLimit } =
     useProductContext();
@@ -106,8 +103,6 @@ const PriceRange = ({ isOpen, setIsOpen }) => {
   useEffect(() => {
     setMaxPrice(maxRangeLimit);
   }, [maxRangeLimit, setMaxPrice]);
-
-  const handleMouseDown = (thumb) => setActiveThumb(thumb);
 
   const calculateValue = (clientX) => {
     if (!containerRef.current) return 0;
@@ -128,146 +123,130 @@ const PriceRange = ({ isOpen, setIsOpen }) => {
     }
   };
 
-  const handleMouseUp = () => setActiveThumb(null);
-  const handleTouchMove = (e) =>
-    e.touches.length > 0 && handleMouseMove(e.touches[0]);
-
-  const handleMinChange = (e) => {
-    const value = Number(e.target.value);
-    setMinPrice(Math.min(Math.max(0, value), maxPrice - 1));
-  };
-  const handleMaxChange = (e) => {
-    const value = Number(e.target.value);
-    setMaxPrice(Math.max(Math.min(maxRangeLimit, value), minPrice + 1));
-  };
+  if (!isOpen) return null;
 
   const minPosition = (minPrice / maxRangeLimit) * 100;
   const maxPosition = (maxPrice / maxRangeLimit) * 100;
 
   return (
-    <>
-      {isOpen && (
-        <div className="mt-4 space-y-4">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <label className="block text-sm text-[#182B55] font-medium mb-1">
-                Min Price
-              </label>
-              <input
-                type="number"
-                value={minPrice}
-                onChange={handleMinChange}
-                className="w-full px-3 py-2 border border-[#ECF0F9] rounded-md text-[#5D6576]"
-                min={0}
-                max={maxPrice - 1}
-              />
-            </div>
-            <div className="flex items-end text-[#3F66BC]">–</div>
-            <div className="flex-1">
-              <label className="block text-sm text-[#182B55] font-medium mb-1">
-                Max Price
-              </label>
-              <input
-                type="number"
-                value={maxPrice}
-                onChange={handleMaxChange}
-                className="w-full px-3 py-2 border border-[#ECF0F9] rounded-md text-[#5D6576]"
-                min={minPrice + 1}
-                max={maxRangeLimit}
-              />
-            </div>
-          </div>
-
-          <div
-            className="relative h-10"
-            ref={containerRef}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleMouseUp}
-          >
-            <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#ECF0F9] rounded-full -translate-y-1/2" />
-            <div
-              className="absolute top-1/2 h-1 bg-blue-500 rounded-full -translate-y-1/2"
-              style={{
-                left: `${minPosition}%`,
-                width: `${maxPosition - minPosition}%`,
-              }}
-            />
-            <div
-              ref={minThumbRef}
-              className="absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full top-1/2 -translate-y-1/2 cursor-pointer shadow-sm"
-              style={{ left: `${minPosition}%` }}
-              onMouseDown={() => handleMouseDown("min")}
-              onTouchStart={() => handleMouseDown("min")}
-            />
-            <div
-              ref={maxThumbRef}
-              className="absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full top-1/2 -translate-y-1/2 cursor-pointer shadow-sm"
-              style={{ left: `${maxPosition}%` }}
-              onMouseDown={() => handleMouseDown("max")}
-              onTouchStart={() => handleMouseDown("max")}
-            />
-          </div>
-
-          <p className="text-[#5D6576] text-[16px] font-medium">
-            Price: ${minPrice} – ${maxPrice}
-          </p>
+    <div className="mt-4 space-y-4">
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="block text-sm text-[#182B55] font-medium mb-1">
+            Min Price
+          </label>
+          <input
+            type="number"
+            value={minPrice}
+            onChange={(e) =>
+              setMinPrice(
+                Math.min(Math.max(0, Number(e.target.value)), maxPrice - 1)
+              )
+            }
+            className="w-full px-3 py-2 border border-[#ECF0F9] rounded-md text-[#5D6576]"
+            min={0}
+            max={maxPrice - 1}
+          />
         </div>
-      )}
-    </>
+        <div className="flex items-end text-[#3F66BC]">–</div>
+        <div className="flex-1">
+          <label className="block text-sm text-[#182B55] font-medium mb-1">
+            Max Price
+          </label>
+          <input
+            type="number"
+            value={maxPrice}
+            onChange={(e) =>
+              setMaxPrice(
+                Math.max(
+                  Math.min(maxRangeLimit, Number(e.target.value)),
+                  minPrice + 1
+                )
+              )
+            }
+            className="w-full px-3 py-2 border border-[#ECF0F9] rounded-md text-[#5D6576]"
+            min={minPrice + 1}
+            max={maxRangeLimit}
+          />
+        </div>
+      </div>
+
+      <div
+        className="relative h-10"
+        ref={containerRef}
+        onMouseMove={handleMouseMove}
+        onMouseUp={() => setActiveThumb(null)}
+        onMouseLeave={() => setActiveThumb(null)}
+        onTouchMove={(e) => e.touches.length && handleMouseMove(e.touches[0])}
+        onTouchEnd={() => setActiveThumb(null)}
+      >
+        <div className="absolute top-1/2 left-0 right-0 h-1 bg-[#ECF0F9] rounded-full -translate-y-1/2" />
+        <div
+          className="absolute top-1/2 h-1 bg-blue-500 rounded-full -translate-y-1/2"
+          style={{
+            left: `${minPosition}%`,
+            width: `${maxPosition - minPosition}%`,
+          }}
+        />
+        <div
+          className="absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full top-1/2 -translate-y-1/2 cursor-pointer shadow-sm"
+          style={{ left: `${minPosition}%` }}
+          onMouseDown={() => setActiveThumb("min")}
+          onTouchStart={() => setActiveThumb("min")}
+        />
+        <div
+          className="absolute w-4 h-4 bg-white border-2 border-blue-500 rounded-full top-1/2 -translate-y-1/2 cursor-pointer shadow-sm"
+          style={{ left: `${maxPosition}%` }}
+          onMouseDown={() => setActiveThumb("max")}
+          onTouchStart={() => setActiveThumb("max")}
+        />
+      </div>
+
+      <p className="text-[#5D6576] text-[16px] font-medium">
+        Price: ${minPrice} – ${maxPrice}
+      </p>
+    </div>
   );
 };
 
+/* ---------------- main ---------------- */
+
 const Filter = ({ onClose, products = [] }) => {
-  // collapsibles
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
   const [isPriceOpen, setIsPriceOpen] = useState(true);
-
-  // dynamic filters
   const [openKeys, setOpenKeys] = useState({}); // { [groupKey]: boolean }
-  const [fastShipping, setFastShipping] = useState(false);
   const [expandedParentId, setExpandedParentId] = useState(null);
 
-  const { categories, singleCategory, setSingleCategory } =
-    useContext(CategoryContext);
+  const { categories, setSingleCategory } = useContext(CategoryContext);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const parentSlug = searchParams.get("parent_category");
   const subSlug = searchParams.get("sub_category");
   const childSlug = searchParams.get("child_category");
 
-  // ✅ show dynamic filters only when any category level is selected
   const hasCategorySelected = !!(parentSlug || subSlug || childSlug);
 
-  // ---------- Category tree ----------
+  /* ---------- Category tree (URL-aware) ---------- */
   const formattedCategories = useMemo(() => {
     if (!categories) return [];
 
-    const formatCategories = (categories) =>
-      categories.map((category) => {
+    const build = (cats) =>
+      cats.map((category) => {
         const name =
           category.category_name ||
           category.child_category_name ||
           category.subcategory_name ||
           "";
         const slug = `${formatCategoryName(name)}-${category.id}`;
-
-        const newCategory = { ...category, slug, toggle: false };
-
-        if (category.sub_category) {
-          newCategory.sub_category = formatCategories(category.sub_category);
-        }
-        if (category.child_category) {
-          newCategory.child_category = formatCategories(
-            category.child_category
-          );
-        }
-        return newCategory;
+        const node = { ...category, slug, toggle: false };
+        if (category.sub_category)
+          node.sub_category = build(category.sub_category);
+        if (category.child_category)
+          node.child_category = build(category.child_category);
+        return node;
       });
 
-    const formatted = formatCategories(categories);
+    const formatted = build(categories);
 
     return formatted.map((parent) => {
       const hasActiveSub = parent.sub_category?.some(
@@ -275,12 +254,8 @@ const Filter = ({ onClose, products = [] }) => {
           sub.slug === subSlug ||
           sub.child_category?.some((child) => child.slug === childSlug)
       );
-      const hasActiveChild = parent.sub_category?.some((sub) =>
-        sub.child_category?.some((child) => child.slug === childSlug)
-      );
 
-      const parentToggle =
-        parent.slug === parentSlug || hasActiveSub || hasActiveChild;
+      const parentToggle = parent.slug === parentSlug || hasActiveSub;
 
       const subCategories = parent.sub_category?.map((sub) => {
         const hasActiveGrandchild = sub.child_category?.some(
@@ -293,21 +268,14 @@ const Filter = ({ onClose, products = [] }) => {
           toggle: child.slug === childSlug,
         }));
 
-        return {
-          ...sub,
-          child_category: childCategories,
-          toggle: subToggle,
-        };
+        return { ...sub, child_category: childCategories, toggle: subToggle };
       });
 
-      return {
-        ...parent,
-        sub_category: subCategories,
-        toggle: parentToggle,
-      };
+      return { ...parent, sub_category: subCategories, toggle: parentToggle };
     });
   }, [categories, parentSlug, subSlug, childSlug]);
 
+  // keep CategoryContext.singleCategory in sync (optional)
   useEffect(() => {
     if (!formattedCategories.length) return;
     const matchedParent =
@@ -318,36 +286,34 @@ const Filter = ({ onClose, products = [] }) => {
     setSingleCategory(matchedParent || null);
   }, [formattedCategories, setSingleCategory]);
 
-  const handleParentClick = (categoryId) => {
-    setExpandedParentId(expandedParentId === categoryId ? null : categoryId);
-  };
+  const handleParentClick = (categoryId) =>
+    setExpandedParentId((prev) => (prev === categoryId ? null : categoryId));
 
   const handleCategoryToggle = useCallback(
     (level, id, parentId = null) => {
-      const newSearchParams = new URLSearchParams(searchParams);
+      const next = new URLSearchParams(searchParams);
 
       if (level === "parent") {
         const category = formattedCategories.find((c) => c.id === id);
         if (category?.toggle) {
-          newSearchParams.delete("parent_category");
-          newSearchParams.delete("sub_category");
-          newSearchParams.delete("child_category");
+          next.delete("parent_category");
+          next.delete("sub_category");
+          next.delete("child_category");
         } else {
-          newSearchParams.set("parent_category", category.slug);
-          newSearchParams.delete("sub_category");
-          newSearchParams.delete("child_category");
+          next.set("parent_category", category.slug);
+          next.delete("sub_category");
+          next.delete("child_category");
         }
       } else if (level === "sub" && parentId) {
         const parent = formattedCategories.find((c) => c.id === parentId);
         const sub = parent?.sub_category?.find((s) => s.id === id);
-
         if (sub?.toggle) {
-          newSearchParams.delete("sub_category");
-          newSearchParams.delete("child_category");
+          next.delete("sub_category");
+          next.delete("child_category");
         } else {
-          newSearchParams.set("parent_category", parent.slug);
-          newSearchParams.set("sub_category", sub.slug);
-          newSearchParams.delete("child_category");
+          next.set("parent_category", parent.slug);
+          next.set("sub_category", sub.slug);
+          next.delete("child_category");
         }
       } else if (level === "child" && parentId) {
         const parent = formattedCategories.find((c) =>
@@ -357,28 +323,49 @@ const Filter = ({ onClose, products = [] }) => {
         const child = sub?.child_category?.find((c) => c.id === id);
 
         if (child?.toggle) {
-          newSearchParams.delete("child_category");
+          next.delete("child_category");
         } else {
-          newSearchParams.set("parent_category", parent.slug);
-          newSearchParams.set("sub_category", sub.slug);
-          newSearchParams.set("child_category", child.slug);
+          next.set("parent_category", parent.slug);
+          next.set("sub_category", sub.slug);
+          next.set("child_category", child.slug);
         }
       }
 
-      setSearchParams(newSearchParams);
+      setSearchParams(next);
     },
     [formattedCategories, searchParams, setSearchParams]
   );
 
-  // ---------- Build dynamic filter groups (ONLY when a category is selected) ----------
-  // IMPORTANT: `products` prop should already be the array you want to base options on
-  // (i.e., the category-scoped array from the parent).
+  /* ---------- STEP 1: Filter products by selected category (by IDs) ---------- */
+  const scopedProducts = useMemo(() => {
+    if (!hasCategorySelected) return [];
+
+    const targetChildId = idFromSlug(childSlug);
+    const targetSubId = idFromSlug(subSlug);
+    const targetParentId = idFromSlug(parentSlug);
+
+    return (products || []).filter((p) => {
+      const childId = p?.product_category?.id;
+      const subId = p?.product_category?.sub_category?.id;
+      const parentId = p?.product_category?.sub_category?.parent_category?.id;
+
+      if (targetChildId) return String(childId) === String(targetChildId);
+      if (targetSubId) return String(subId) === String(targetSubId);
+      if (targetParentId) return String(parentId) === String(targetParentId);
+      return false;
+    });
+  }, [products, parentSlug, subSlug, childSlug, hasCategorySelected]);
+
+  /* ---------- STEP 2: Build filter groups from those scoped products' variations ---------- */
   const filterDefs = useMemo(() => {
-    if (!hasCategorySelected) return []; // hide + don't compute when no category picked
+    if (!hasCategorySelected) return [];
+    if (!scopedProducts.length) return [];
 
     const groups = new Map(); // key -> Set(values)
-    for (const p of products || []) {
-      for (const v of p?.variation || []) {
+
+    for (const p of scopedProducts) {
+      const variations = p?.variation || [];
+      for (const v of variations) {
         const arr = safeParseFilters(v?.filters);
         for (const f of arr) {
           const k = String(f?.key || "").trim();
@@ -390,24 +377,26 @@ const Filter = ({ onClose, products = [] }) => {
       }
     }
 
-    const defs = [...groups.entries()].map(([key, set]) => ({
-      key,
-      options: [...set].sort(),
-    }));
+    return [...groups.entries()]
+      .map(([key, set]) => ({ key, options: [...set].sort() }))
+      .sort((a, b) => a.key.localeCompare(b.key));
+  }, [scopedProducts, hasCategorySelected]);
 
-    // default open all groups first time
+  // open new groups by default
+  useEffect(() => {
     setOpenKeys((prev) => {
       const next = { ...prev };
-      defs.forEach(({ key }) => {
+      filterDefs.forEach(({ key }) => {
         if (!(key in next)) next[key] = true;
       });
       return next;
     });
+  }, [filterDefs]);
 
-    return defs.sort((a, b) => a.key.localeCompare(b.key));
-  }, [products, hasCategorySelected]);
+  /* ---------- URL-backed selections for dynamic filters ---------- */
 
-  // -------- URL-backed dynamic selections ----------
+  const [selectedFilters, setSelectedFilters] = useState(new Map());
+
   const readSelectedFromParams = useCallback(() => {
     const map = new Map();
     for (const def of filterDefs) {
@@ -425,7 +414,6 @@ const Filter = ({ onClose, products = [] }) => {
     return map;
   }, [filterDefs, searchParams]);
 
-  const [selectedFilters, setSelectedFilters] = useState(new Map());
   useEffect(() => {
     setSelectedFilters(readSelectedFromParams());
   }, [readSelectedFromParams]);
@@ -456,80 +444,52 @@ const Filter = ({ onClose, products = [] }) => {
 
   const clearAllFilters = useCallback(() => {
     const next = new URLSearchParams(searchParams);
-    // clear categories
     next.delete("parent_category");
     next.delete("sub_category");
     next.delete("child_category");
-    // clear dynamic groups
-    for (const def of filterDefs) {
-      next.delete(`filter_${slugifyKey(def.key)}`);
+    for (const [k] of next.entries()) {
+      if (k.startsWith("filter_")) next.delete(k);
     }
     setSearchParams(next);
-  }, [searchParams, setSearchParams, filterDefs]);
+  }, [searchParams, setSearchParams]);
 
   const removeFilter = useCallback(
     (type) => {
-      const newSearchParams = new URLSearchParams(searchParams);
-
+      const next = new URLSearchParams(searchParams);
       if (type === "parent_category") {
-        newSearchParams.delete("parent_category");
-        newSearchParams.delete("sub_category");
-        newSearchParams.delete("child_category");
+        next.delete("parent_category");
+        next.delete("sub_category");
+        next.delete("child_category");
       } else if (type === "sub_category") {
-        const parentSlug = searchParams.get("parent_category");
-        newSearchParams.delete("sub_category");
-        newSearchParams.delete("child_category");
-        if (!parentSlug) {
-          const parent = formattedCategories.find((p) =>
-            p.sub_category?.some(
-              (s) =>
-                s.slug === subSlug ||
-                s.child_category?.some((c) => c.slug === childSlug)
-            )
-          );
-          if (parent) {
-            newSearchParams.set("parent_category", parent.slug);
-          }
-        }
+        next.delete("sub_category");
+        next.delete("child_category");
       } else if (type === "child_category") {
-        const parentSlug = searchParams.get("parent_category");
-        const subSlug = searchParams.get("sub_category");
-        newSearchParams.delete("child_category");
-
-        if (!parentSlug || !subSlug) {
-          const parent = formattedCategories.find((p) =>
-            p.sub_category?.some((s) =>
-              s.child_category?.some((c) => c.slug === childSlug)
-            )
-          );
-          if (parent) {
-            newSearchParams.set("parent_category", parent.slug);
-            const sub = parent.sub_category?.find((s) =>
-              s.child_category?.some((c) => c.slug === childSlug)
-            );
-            if (sub) {
-              newSearchParams.set("sub_category", sub.slug);
-            }
-          }
-        }
+        next.delete("child_category");
       }
-
-      setSearchParams(newSearchParams);
+      setSearchParams(next);
     },
-    [formattedCategories, searchParams, setSearchParams, subSlug, childSlug]
+    [searchParams, setSearchParams]
   );
 
   const formatSlugForDisplay = useCallback((slug) => {
     if (!slug) return "";
     const parts = slug.split("-");
     parts.pop();
-    return parts
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+    return parts.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
   }, []);
+
+  const hasAnyDynamicParams = useMemo(() => {
+    for (const [k, v] of searchParams.entries()) {
+      if (k.startsWith("filter_") && v) return true;
+    }
+    return false;
+  }, [searchParams]);
+
+  /* ---------------- render ---------------- */
 
   return (
     <div className="w-[282px] bg-white space-y-6 h-screen lg:h-auto overflow-y-auto">
+      {/* Header */}
       <div className="space-y-2">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold text-2xl text-[#182B55] leading-8 px-5 md:px-0 pt-5 md:pt-0">
@@ -544,11 +504,11 @@ const Filter = ({ onClose, products = [] }) => {
         </div>
       </div>
 
-      {/* Active filters display */}
+      {/* Active chips */}
       <div className="flex flex-wrap gap-2 font-medium w-full max-w-md px-1">
         {(parentSlug || subSlug || childSlug) && (
           <span className="flex items-center bg-[#F8F9FB] text-[#182B55] text-[12px] leading-[16px] px-3 py-2 rounded-[40px] max-w-full">
-            <span className="truncate max-w-[140px]">
+            <span className="truncate max-w-[160px]">
               {formatSlugForDisplay(
                 parentSlug ||
                   formattedCategories.find((p) =>
@@ -572,7 +532,7 @@ const Filter = ({ onClose, products = [] }) => {
 
         {(subSlug || childSlug) && (
           <span className="flex items-center bg-[#F8F9FB] text-[#182B55] text-[12px] leading-[16px] px-3 py-2 rounded-[40px] max-w-full">
-            <span className="truncate max-w-[140px]">
+            <span className="truncate max-w-[160px]">
               {formatSlugForDisplay(
                 subSlug ||
                   formattedCategories
@@ -594,7 +554,7 @@ const Filter = ({ onClose, products = [] }) => {
 
         {childSlug && (
           <span className="flex items-center bg-[#F8F9FB] text-[#182B55] text-[12px] leading-[16px] px-3 py-2 rounded-[40px] max-w-full">
-            <span className="truncate max-w-[140px]">
+            <span className="truncate max-w-[160px]">
               {formatSlugForDisplay(childSlug)}
             </span>
             <button
@@ -607,7 +567,7 @@ const Filter = ({ onClose, products = [] }) => {
           </span>
         )}
 
-        {/* dynamic chips (only if category selected) */}
+        {/* dynamic chips */}
         {hasCategorySelected &&
           filterDefs.flatMap((def) => {
             const sel = [...(selectedFilters.get(def.key) || [])];
@@ -616,7 +576,7 @@ const Filter = ({ onClose, products = [] }) => {
                 key={`${def.key}-${val}`}
                 className="flex items-center bg-[#F8F9FB] text-[#182B55] text-[12px] leading-[16px] px-3 py-2 rounded-[40px] max-w-full"
               >
-                <span className="truncate max-w-[160px]">
+                <span className="truncate max-w-[180px]">
                   {def.key}: {val}
                 </span>
                 <button
@@ -630,13 +590,7 @@ const Filter = ({ onClose, products = [] }) => {
             ));
           })}
 
-        {(parentSlug ||
-          subSlug ||
-          childSlug ||
-          (hasCategorySelected &&
-            filterDefs.some(
-              (d) => (selectedFilters.get(d.key) || new Set()).size
-            ))) && (
+        {(parentSlug || subSlug || childSlug || hasAnyDynamicParams) && (
           <button
             onClick={clearAllFilters}
             className="text-[14px] leading-6 text-[#3F66BC] hover:underline cursor-pointer"
@@ -644,19 +598,6 @@ const Filter = ({ onClose, products = [] }) => {
             Clear All
           </button>
         )}
-      </div>
-
-      {/* Fast Shipping (optional) */}
-      <div className="border border-[#ECF0F9] rounded-[8px] px-3 py-[14px] flex items-center space-x-2 bg-[#F8F9FB]">
-        <input
-          type="checkbox"
-          checked={fastShipping}
-          onChange={(e) => setFastShipping(e.target.checked)}
-          className="bg-[#3F66BC] w-4 h-4"
-        />
-        <label className="text-[16px] leading-5 text-[#182B55] font-medium cursor-pointer">
-          Fast Shipping
-        </label>
       </div>
 
       {/* Categories */}
@@ -683,71 +624,125 @@ const Filter = ({ onClose, products = [] }) => {
                     handleCategoryToggle("parent", category.id);
                   }}
                 />
+                {category.sub_category?.length > 0 && (
+                  <motion.div
+                    animate={{
+                      rotate: expandedParentId === category.id ? 180 : 0,
+                    }}
+                    transition={{ duration: 0.2 }}
+                    className="ml-2"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M19 9L12 16L5 9"
+                        stroke="#1748b1"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </motion.div>
+                )}
               </div>
 
               <AnimatePresence>
-                {category.id && category.sub_category?.length > 0 && (
-                  <motion.div className="ml-6 mt-2 space-y-2">
-                    {category.sub_category?.map((sub) => (
-                      <Checkbox
-                        key={sub.id}
-                        id={`sub-${sub.id}`}
-                        label={`${sub.subcategory_name} (${
-                          sub.total_stock || 0
-                        })`}
-                        checked={sub.toggle}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          handleCategoryToggle("sub", sub.id, category.id);
-                        }}
-                      />
-                    ))}
-                  </motion.div>
-                )}
+                {expandedParentId === category.id &&
+                  category.sub_category?.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden ml-6"
+                    >
+                      <div className="space-y-3 mt-2">
+                        {category.sub_category?.map((sub) => (
+                          <div key={sub.id}>
+                            <Checkbox
+                              id={`sub-${sub.id}`}
+                              label={`${sub.subcategory_name} (${
+                                sub.total_stock || 0
+                              })`}
+                              checked={sub.toggle}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                handleCategoryToggle(
+                                  "sub",
+                                  sub.id,
+                                  category.id
+                                );
+                              }}
+                            />
+                            {sub.child_category?.length > 0 && (
+                              <div className="ml-6 mt-2 space-y-2">
+                                {sub.child_category?.map((child) => (
+                                  <Checkbox
+                                    key={child.id}
+                                    id={`child-${child.id}`}
+                                    label={`${child.child_category_name} (${
+                                      child.total_stock || 0
+                                    })`}
+                                    checked={child.toggle}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      handleCategoryToggle(
+                                        "child",
+                                        child.id,
+                                        sub.id
+                                      );
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
               </AnimatePresence>
             </div>
           ))}
         </div>
       </ToggleSection>
 
-      {/* ✅ Dynamic attribute filters (only when a category is selected) */}
-      {hasCategorySelected && filterDefs.length > 0 && (
-        <>
-          {filterDefs.map(({ key, options }) => (
-            <ToggleSection
-              key={key}
-              title={key}
-              isOpen={!!openKeys[key]}
-              setIsOpen={(open) =>
-                setOpenKeys((prev) => ({ ...prev, [key]: open }))
-              }
-            >
-              <div className="space-y-2">
-                {options.map((opt) => (
-                  <Checkbox
-                    key={`${key}-${opt}`}
-                    id={`${slugifyKey(key)}-${slugifyKey(opt)}`}
-                    label={opt}
-                    checked={isSelected(key, opt)}
-                    onChange={() => toggleAttr(key, opt)}
-                  />
-                ))}
-                {[...(selectedFilters.get(key) || [])].length > 0 && (
-                  <button
-                    onClick={() => clearAttrGroup(key)}
-                    className="mt-1 text-[14px] leading-6 text-[#3F66BC] hover:underline"
-                  >
-                    Clear {key}
-                  </button>
-                )}
-              </div>
-            </ToggleSection>
-          ))}
-        </>
-      )}
-
-      {/* Optional hint when no category selected */}
-      {!hasCategorySelected && (
+      {/* Dynamic attribute filters */}
+      {hasCategorySelected && filterDefs.length > 0 ? (
+        filterDefs.map(({ key, options }) => (
+          <ToggleSection
+            key={key}
+            title={key}
+            isOpen={!!openKeys[key]}
+            setIsOpen={(open) =>
+              setOpenKeys((prev) => ({ ...prev, [key]: open }))
+            }
+          >
+            <div className="space-y-2">
+              {options.map((opt) => (
+                <Checkbox
+                  key={`${key}-${opt}`}
+                  id={`${slugifyKey(key)}-${slugifyKey(opt)}`}
+                  label={opt}
+                  checked={isSelected(key, opt)}
+                  onChange={() => toggleAttr(key, opt)}
+                />
+              ))}
+              {[...(selectedFilters.get(key) || [])].length > 0 && (
+                <button
+                  onClick={() => clearAttrGroup(key)}
+                  className="mt-1 text-[14px] leading-6 text-[#3F66BC] hover:underline"
+                >
+                  Clear {key}
+                </button>
+              )}
+            </div>
+          </ToggleSection>
+        ))
+      ) : hasCategorySelected ? (
+        <div className="text-sm text-[#5D6576] px-1">
+          No attribute filters for this category.
+        </div>
+      ) : (
         <div className="text-sm text-[#5D6576] px-1">
           Select a category to see attribute filters.
         </div>
@@ -759,13 +754,8 @@ const Filter = ({ onClose, products = [] }) => {
         isOpen={isPriceOpen}
         setIsOpen={setIsPriceOpen}
       >
-        <PriceRange isOpen={isPriceOpen} setIsOpen={setIsPriceOpen} />
+        <PriceRange isOpen={isPriceOpen} />
       </ToggleSection>
-
-      {/* (Optional) Made in USA */}
-      {/* <ToggleSection title="Made in the USA" isOpen={isMadeOpen} setIsOpen={setIsMadeOpen}>
-        <CheckboxUsa id="usa" label="Made in USA" />
-      </ToggleSection> */}
     </div>
   );
 };
