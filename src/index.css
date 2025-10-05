@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Reusable utility classNamees */
+@layer components {
+  /* Flex utilities */
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+
+  .flex-col-center {
+    @apply flex flex-col items-center justify-center;
+  }
+
+  /* Grid utilities */
+  .grid-2 {
+    @apply grid grid-cols-2 gap-4;
+  }
+
+  .grid-3 {
+    @apply grid grid-cols-3 gap-6;
+  }
+
+  .grid-center {
+    @apply grid place-items-center;
+  }
+
+  /* Card styling */
+  .card {
+    @apply bg-white dark:bg-zinc-800 shadow-md rounded-lg p-6;
+  }
+
+  /* Button styling */
+  .btn-primary {
+    @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition;
+  }
+
+  .btn-outline {
+    @apply border border-blue-600 text-blue-600 px-4 py-2 rounded hover:bg-blue-100;
+  }
+  
+}

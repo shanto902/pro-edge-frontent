@@ -1,0 +1,54 @@
+ {
+    "data": {
+        "products": [
+            {
+                "id": "1",
+                "status": "draft",
+                "date_updated": "2025-05-01T08:04:12.196Z",
+                "name": "iphone",
+                "title": "mkfvmfkvkvkmvkr",
+                "slug": "nvnv nvnvnbb",
+                "description": "v             vn  ndjfdsdkkvnsfkvfnkvvfnfnjdfjfvdfvjfndj",
+                
+                "base_img_url": "8019b3a4-46cc-4325-876b-76ba7202d630",
+                "product_category": {
+                    "id": "2",
+                    "child_category_name": "4-phase",
+                    "sub_category_name": null
+                },
+                "product_key_features": [
+                    {
+                        "key_feature_id": {
+                            "id": "1",
+                            "feature_name": "HP",
+                            "feature_value": "SPL"
+                        }
+                    },
+                    {
+                        "key_feature_id": {
+                            "id": "2",
+                            "feature_name": "phase",
+                            "feature_value": "3-phase"
+                        }
+                    }
+                ],
+                "product_variation": [
+                    {
+                        "id": "1",
+                        "product_variation_link_id": {
+                            "id": "1",
+                            "variation": {
+                                "variation_name": "size"
+                            },
+                            "stock": 45,
+                            "price": "456",
+                            "offer_price": "345",
+                            "sku_code": "ghh-900",
+                            "vaiation_image": "d6c11ebc-6e0e-4f42-b339-ac95a6aa5f74"
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}

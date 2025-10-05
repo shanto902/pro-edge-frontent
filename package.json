@@ -1,0 +1,51 @@
+{
+  "name": "proedge",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@directus/sdk": "^18.0.3",
+    "@heroicons/react": "^2.2.0",
+    "@stripe/react-stripe-js": "^3.7.0",
+    "@stripe/stripe-js": "^7.3.0",
+    "@tailwindcss/vite": "^4.1.4",
+    "@tanstack/react-query": "^5.76.1",
+    "anchor-pki": "^0.3.2",
+    "axios": "^1.9.0",
+    "fast-levenshtein": "^3.0.0",
+    "framer-motion": "^12.16.0",
+    "helmet": "^8.1.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
+    "jwt-decode": "^4.0.0",
+    "prop-types": "^15.8.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-helmet-async": "^2.0.5",
+    "react-icons": "^5.5.0",
+    "react-player": "^2.16.0",
+    "react-router-dom": "^7.5.1",
+    "react-scrollbars-custom": "^4.1.1",
+    "react-spinners": "^0.17.0",
+    "react-toastify": "^11.0.5",
+    "swiper": "^11.2.6",
+    "tailwindcss": "^4.1.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react-swc": "^3.8.0",
+    "eslint": "^9.22.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "vite": "^6.3.1"
+  }
+}
