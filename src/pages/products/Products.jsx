@@ -3,7 +3,7 @@ import levenshtein from "fast-levenshtein";
 import Filter from "../../components/category/Filter";
 import Pagination from "../../components/category/Pagination";
 import { IoFilterSharp } from "react-icons/io5";
-import { CategoryContext } from "../../context/CategoryContext";
+
 import { useProductContext } from "../../context/ProductContext";
 import PageHeader from "../../components/common/utils/banner/SubPageHeader";
 import bgImage from "../../assets/images/cart.png";
@@ -13,6 +13,7 @@ import ProductCard from "../../components/common/utils/cards/ProductCard";
 import { fetchPageBlocks } from "../../context/PageContext";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
+import { CategoryContext } from "../../context/CategoryContext";
 
 const slugifyKey = (s = "") =>
   String(s)

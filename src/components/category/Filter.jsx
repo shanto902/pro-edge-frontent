@@ -42,21 +42,6 @@ const ToggleSection = ({ title, children, isOpen, setIsOpen }) => (
       className="flex items-center justify-between cursor-pointer select-none"
     >
       <h2 className="text-lg font-medium text-[#182B55] leading-6">{title}</h2>
-      <svg
-        className={`w-4 h-4 transform transition-transform ${
-          isOpen ? "rotate-180" : ""
-        }`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
     </div>
     {isOpen && (
       <div className="space-y-4 pt-3 border-t-2 border-[#ECF0F9]">
@@ -122,9 +107,7 @@ const PriceRange = ({ isOpen, setIsOpen }) => {
     setMaxPrice(maxRangeLimit);
   }, [maxRangeLimit, setMaxPrice]);
 
-  const handleMouseDown = (thumb) => {
-    setActiveThumb(thumb);
-  };
+  const handleMouseDown = (thumb) => setActiveThumb(thumb);
 
   const calculateValue = (clientX) => {
     if (!containerRef.current) return 0;
@@ -137,38 +120,25 @@ const PriceRange = ({ isOpen, setIsOpen }) => {
 
   const handleMouseMove = (e) => {
     if (!activeThumb || !containerRef.current) return;
-
     const newValue = calculateValue(e.clientX);
-
     if (activeThumb === "min") {
-      const clampedValue = Math.min(newValue, maxPrice - 1);
-      setMinPrice(clampedValue);
+      setMinPrice(Math.min(newValue, maxPrice - 1));
     } else {
-      const clampedValue = Math.max(newValue, minPrice + 1);
-      setMaxPrice(clampedValue);
+      setMaxPrice(Math.max(newValue, minPrice + 1));
     }
   };
 
-  const handleMouseUp = () => {
-    setActiveThumb(null);
-  };
-
-  const handleTouchMove = (e) => {
-    if (e.touches.length > 0) {
-      handleMouseMove(e.touches[0]);
-    }
-  };
+  const handleMouseUp = () => setActiveThumb(null);
+  const handleTouchMove = (e) =>
+    e.touches.length > 0 && handleMouseMove(e.touches[0]);
 
   const handleMinChange = (e) => {
     const value = Number(e.target.value);
-    const newValue = Math.min(Math.max(0, value), maxPrice - 1);
-    setMinPrice(newValue);
+    setMinPrice(Math.min(Math.max(0, value), maxPrice - 1));
   };
-
   const handleMaxChange = (e) => {
     const value = Number(e.target.value);
-    const newValue = Math.max(Math.min(maxRangeLimit, value), minPrice + 1);
-    setMaxPrice(newValue);
+    setMaxPrice(Math.max(Math.min(maxRangeLimit, value), minPrice + 1));
   };
 
   const minPosition = (minPrice / maxRangeLimit) * 100;
@@ -251,17 +221,15 @@ const PriceRange = ({ isOpen, setIsOpen }) => {
 };
 
 const Filter = ({ onClose, products = [] }) => {
-  // --- existing collapsibles
+  // collapsibles
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
   const [isPriceOpen, setIsPriceOpen] = useState(true);
 
-  // removed old "Item" section; now dynamic filters:
+  // dynamic filters
   const [openKeys, setOpenKeys] = useState({}); // { [groupKey]: boolean }
-
-  const [fastShipping, setFastShipping] = useState(false); // keep for now (not applied in parent yet)
+  const [fastShipping, setFastShipping] = useState(false);
   const [expandedParentId, setExpandedParentId] = useState(null);
 
-  // contexts
   const { categories, singleCategory, setSingleCategory } =
     useContext(CategoryContext);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -270,42 +238,15 @@ const Filter = ({ onClose, products = [] }) => {
   const subSlug = searchParams.get("sub_category");
   const childSlug = searchParams.get("child_category");
 
-  // ---------- Build dynamic filter groups from products. --------------
-  const filterDefs = useMemo(() => {
-    const groups = new Map(); // key -> Set(values)
-    for (const p of products || []) {
-      for (const v of p?.variation || []) {
-        const arr = safeParseFilters(v?.filters);
-        for (const f of arr) {
-          const k = String(f?.key || "").trim();
-          const val = String(f?.value || "").trim();
-          if (!k || !val) continue;
-          if (!groups.has(k)) groups.set(k, new Set());
-          groups.get(k).add(val);
-        }
-      }
-    }
-    const defs = [...groups.entries()].map(([key, set]) => ({
-      key,
-      options: [...set].sort(),
-    }));
-    // default open all groups when they first appear
-    setOpenKeys((prev) => {
-      const next = { ...prev };
-      defs.forEach(({ key }) => {
-        if (!(key in next)) next[key] = true;
-      });
-      return next;
-    });
-    return defs.sort((a, b) => a.key.localeCompare(b.key));
-  }, [products]);
+  // ✅ show dynamic filters only when any category level is selected
+  const hasCategorySelected = !!(parentSlug || subSlug || childSlug);
 
-  // ---------- Category tree preparation (kept from your code) ----------
+  // ---------- Category tree ----------
   const formattedCategories = useMemo(() => {
     if (!categories) return [];
 
-    const formatCategories = (categories) => {
-      return categories.map((category) => {
+    const formatCategories = (categories) =>
+      categories.map((category) => {
         const name =
           category.category_name ||
           category.child_category_name ||
@@ -313,11 +254,7 @@ const Filter = ({ onClose, products = [] }) => {
           "";
         const slug = `${formatCategoryName(name)}-${category.id}`;
 
-        const newCategory = {
-          ...category,
-          slug,
-          toggle: false,
-        };
+        const newCategory = { ...category, slug, toggle: false };
 
         if (category.sub_category) {
           newCategory.sub_category = formatCategories(category.sub_category);
@@ -327,14 +264,11 @@ const Filter = ({ onClose, products = [] }) => {
             category.child_category
           );
         }
-
         return newCategory;
       });
-    };
 
     const formatted = formatCategories(categories);
 
-    // set toggle states based on URL
     return formatted.map((parent) => {
       const hasActiveSub = parent.sub_category?.some(
         (sub) =>
@@ -436,6 +370,43 @@ const Filter = ({ onClose, products = [] }) => {
     [formattedCategories, searchParams, setSearchParams]
   );
 
+  // ---------- Build dynamic filter groups (ONLY when a category is selected) ----------
+  // IMPORTANT: `products` prop should already be the array you want to base options on
+  // (i.e., the category-scoped array from the parent).
+  const filterDefs = useMemo(() => {
+    if (!hasCategorySelected) return []; // hide + don't compute when no category picked
+
+    const groups = new Map(); // key -> Set(values)
+    for (const p of products || []) {
+      for (const v of p?.variation || []) {
+        const arr = safeParseFilters(v?.filters);
+        for (const f of arr) {
+          const k = String(f?.key || "").trim();
+          const val = String(f?.value || "").trim();
+          if (!k || !val) continue;
+          if (!groups.has(k)) groups.set(k, new Set());
+          groups.get(k).add(val);
+        }
+      }
+    }
+
+    const defs = [...groups.entries()].map(([key, set]) => ({
+      key,
+      options: [...set].sort(),
+    }));
+
+    // default open all groups first time
+    setOpenKeys((prev) => {
+      const next = { ...prev };
+      defs.forEach(({ key }) => {
+        if (!(key in next)) next[key] = true;
+      });
+      return next;
+    });
+
+    return defs.sort((a, b) => a.key.localeCompare(b.key));
+  }, [products, hasCategorySelected]);
+
   // -------- URL-backed dynamic selections ----------
   const readSelectedFromParams = useCallback(() => {
     const map = new Map();
@@ -485,7 +456,7 @@ const Filter = ({ onClose, products = [] }) => {
 
   const clearAllFilters = useCallback(() => {
     const next = new URLSearchParams(searchParams);
-    // clear category
+    // clear categories
     next.delete("parent_category");
     next.delete("sub_category");
     next.delete("child_category");
@@ -636,34 +607,36 @@ const Filter = ({ onClose, products = [] }) => {
           </span>
         )}
 
-        {/* dynamic chips */}
-        {filterDefs.flatMap((def) => {
-          const sel = [...(selectedFilters.get(def.key) || [])];
-          return sel.map((val) => (
-            <span
-              key={`${def.key}-${val}`}
-              className="flex items-center bg-[#F8F9FB] text-[#182B55] text-[12px] leading-[16px] px-3 py-2 rounded-[40px] max-w-full"
-            >
-              <span className="truncate max-w-[160px]">
-                {def.key}: {val}
-              </span>
-              <button
-                onClick={() => toggleAttr(def.key, val)}
-                className="ml-2 text-[#182B55] font-bold"
-                aria-label={`Remove ${def.key} ${val}`}
+        {/* dynamic chips (only if category selected) */}
+        {hasCategorySelected &&
+          filterDefs.flatMap((def) => {
+            const sel = [...(selectedFilters.get(def.key) || [])];
+            return sel.map((val) => (
+              <span
+                key={`${def.key}-${val}`}
+                className="flex items-center bg-[#F8F9FB] text-[#182B55] text-[12px] leading-[16px] px-3 py-2 rounded-[40px] max-w-full"
               >
-                &times;
-              </button>
-            </span>
-          ));
-        })}
+                <span className="truncate max-w-[160px]">
+                  {def.key}: {val}
+                </span>
+                <button
+                  onClick={() => toggleAttr(def.key, val)}
+                  className="ml-2 text-[#182B55] font-bold"
+                  aria-label={`Remove ${def.key} ${val}`}
+                >
+                  &times;
+                </button>
+              </span>
+            ));
+          })}
 
         {(parentSlug ||
           subSlug ||
           childSlug ||
-          filterDefs.some(
-            (d) => (selectedFilters.get(d.key) || new Set()).size
-          )) && (
+          (hasCategorySelected &&
+            filterDefs.some(
+              (d) => (selectedFilters.get(d.key) || new Set()).size
+            ))) && (
           <button
             onClick={clearAllFilters}
             className="text-[14px] leading-6 text-[#3F66BC] hover:underline cursor-pointer"
@@ -673,7 +646,7 @@ const Filter = ({ onClose, products = [] }) => {
         )}
       </div>
 
-      {/* Fast Shipping (kept; optional to wire later) */}
+      {/* Fast Shipping (optional) */}
       <div className="border border-[#ECF0F9] rounded-[8px] px-3 py-[14px] flex items-center space-x-2 bg-[#F8F9FB]">
         <input
           type="checkbox"
@@ -710,119 +683,76 @@ const Filter = ({ onClose, products = [] }) => {
                     handleCategoryToggle("parent", category.id);
                   }}
                 />
-                {category.sub_category?.length > 0 && (
-                  <motion.div
-                    animate={{
-                      rotate: expandedParentId === category.id ? 180 : 0,
-                    }}
-                    transition={{ duration: 0.2 }}
-                    className="ml-2"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M19 9L12 16L5 9"
-                        stroke="#1748b1"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </motion.div>
-                )}
               </div>
 
               <AnimatePresence>
-                {expandedParentId === category.id &&
-                  category.sub_category?.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden ml-6"
-                    >
-                      <div className="space-y-3 mt-2">
-                        {category.sub_category?.map((sub) => (
-                          <div key={sub.id}>
-                            <Checkbox
-                              id={`sub-${sub.id}`}
-                              label={`${sub.subcategory_name} (${
-                                sub.total_stock || 0
-                              })`}
-                              checked={sub.toggle}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                handleCategoryToggle(
-                                  "sub",
-                                  sub.id,
-                                  category.id
-                                );
-                              }}
-                            />
-
-                            {sub.child_category?.length > 0 && (
-                              <div className="ml-6 mt-2 space-y-2">
-                                {sub.child_category?.map((child) => (
-                                  <Checkbox
-                                    key={child.id}
-                                    id={`child-${child.id}`}
-                                    label={`${child.child_category_name} (${
-                                      child.total_stock || 0
-                                    })`}
-                                    checked={child.toggle}
-                                    onChange={(e) => {
-                                      e.stopPropagation();
-                                      handleCategoryToggle(
-                                        "child",
-                                        child.id,
-                                        sub.id
-                                      );
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
+                {category.id && category.sub_category?.length > 0 && (
+                  <motion.div className="ml-6 mt-2 space-y-2">
+                    {category.sub_category?.map((sub) => (
+                      <Checkbox
+                        key={sub.id}
+                        id={`sub-${sub.id}`}
+                        label={`${sub.subcategory_name} (${
+                          sub.total_stock || 0
+                        })`}
+                        checked={sub.toggle}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleCategoryToggle("sub", sub.id, category.id);
+                        }}
+                      />
+                    ))}
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
           ))}
         </div>
       </ToggleSection>
-      {/* Dynamic attribute filters from variation.filters */}
-      {filterDefs.map(({ key, options }) => (
-        <ToggleSection
-          key={key}
-          title={key}
-          isOpen={!!openKeys[key]}
-          setIsOpen={(open) =>
-            setOpenKeys((prev) => ({ ...prev, [key]: open }))
-          }
-        >
-          <div className="space-y-2">
-            {options.map((opt) => (
-              <Checkbox
-                key={`${key}-${opt}`}
-                id={`${slugifyKey(key)}-${slugifyKey(opt)}`}
-                label={opt}
-                checked={isSelected(key, opt)}
-                onChange={() => toggleAttr(key, opt)}
-              />
-            ))}
-            {[...(selectedFilters.get(key) || [])].length > 0 && (
-              <button
-                onClick={() => clearAttrGroup(key)}
-                className="mt-1 text-[14px] leading-6 text-[#3F66BC] hover:underline"
-              >
-                Clear {key}
-              </button>
-            )}
-          </div>
-        </ToggleSection>
-      ))}
+
+      {/* ✅ Dynamic attribute filters (only when a category is selected) */}
+      {hasCategorySelected && filterDefs.length > 0 && (
+        <>
+          {filterDefs.map(({ key, options }) => (
+            <ToggleSection
+              key={key}
+              title={key}
+              isOpen={!!openKeys[key]}
+              setIsOpen={(open) =>
+                setOpenKeys((prev) => ({ ...prev, [key]: open }))
+              }
+            >
+              <div className="space-y-2">
+                {options.map((opt) => (
+                  <Checkbox
+                    key={`${key}-${opt}`}
+                    id={`${slugifyKey(key)}-${slugifyKey(opt)}`}
+                    label={opt}
+                    checked={isSelected(key, opt)}
+                    onChange={() => toggleAttr(key, opt)}
+                  />
+                ))}
+                {[...(selectedFilters.get(key) || [])].length > 0 && (
+                  <button
+                    onClick={() => clearAttrGroup(key)}
+                    className="mt-1 text-[14px] leading-6 text-[#3F66BC] hover:underline"
+                  >
+                    Clear {key}
+                  </button>
+                )}
+              </div>
+            </ToggleSection>
+          ))}
+        </>
+      )}
+
+      {/* Optional hint when no category selected */}
+      {!hasCategorySelected && (
+        <div className="text-sm text-[#5D6576] px-1">
+          Select a category to see attribute filters.
+        </div>
+      )}
+
       {/* Price */}
       <ToggleSection
         title="Price"
@@ -831,6 +761,11 @@ const Filter = ({ onClose, products = [] }) => {
       >
         <PriceRange isOpen={isPriceOpen} setIsOpen={setIsPriceOpen} />
       </ToggleSection>
+
+      {/* (Optional) Made in USA */}
+      {/* <ToggleSection title="Made in the USA" isOpen={isMadeOpen} setIsOpen={setIsMadeOpen}>
+        <CheckboxUsa id="usa" label="Made in USA" />
+      </ToggleSection> */}
     </div>
   );
 };
