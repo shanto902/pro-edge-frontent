@@ -382,17 +382,6 @@ const Filter = ({ onClose, products = [] }) => {
       .sort((a, b) => a.key.localeCompare(b.key));
   }, [scopedProducts, hasCategorySelected]);
 
-  // open new groups by default
-  useEffect(() => {
-    setOpenKeys((prev) => {
-      const next = { ...prev };
-      filterDefs.forEach(({ key }) => {
-        if (!(key in next)) next[key] = true;
-      });
-      return next;
-    });
-  }, [filterDefs]);
-
   /* ---------- URL-backed selections for dynamic filters ---------- */
 
   const [selectedFilters, setSelectedFilters] = useState(new Map());
@@ -484,6 +473,72 @@ const Filter = ({ onClose, products = [] }) => {
     }
     return false;
   }, [searchParams]);
+
+  /* ---------- keep only up to 3 dynamic groups open ---------- */
+
+  const MAX_OPEN_GROUPS = 3;
+
+  const handleGroupOpen = useCallback(
+    (key, wantOpen) => {
+      setOpenKeys((prev) => {
+        // seed with all known keys (previous + current def list)
+        const allKeys = new Set([
+          ...Object.keys(prev),
+          ...filterDefs.map((d) => d.key),
+        ]);
+
+        // normalize current open state
+        const normalized = {};
+        for (const k of allKeys) normalized[k] = !!prev[k];
+
+        if (!wantOpen) {
+          normalized[key] = false;
+          return normalized;
+        }
+
+        if (normalized[key]) return normalized; // already open
+
+        // open requested key and keep only latest 3 open
+        const currentlyOpen = [...allKeys].filter((k) => normalized[k]);
+
+        // put the newly opened key first (most recent)
+        const newOpenOrder = [key, ...currentlyOpen].filter(
+          (v, i, a) => a.indexOf(v) === i
+        );
+
+        // enforce cap
+        const keepOpen = newOpenOrder.slice(0, MAX_OPEN_GROUPS);
+
+        for (const k of allKeys) {
+          normalized[k] = keepOpen.includes(k);
+        }
+        return normalized;
+      });
+    },
+    [filterDefs]
+  );
+
+  // Initialize open groups when filterDefs OR selections change:
+  // - Prefer groups that have active selections from URL
+  // - Then fill with the rest until we reach the cap
+  useEffect(() => {
+    setOpenKeys(() => {
+      const next = {};
+      const selectedFirst = filterDefs
+        .filter((d) => (selectedFilters.get(d.key) || new Set()).size > 0)
+        .map((d) => d.key);
+
+      const fillOrder = [
+        ...new Set([...selectedFirst, ...filterDefs.map((d) => d.key)]),
+      ];
+      const toOpen = fillOrder.slice(0, MAX_OPEN_GROUPS);
+
+      for (const d of filterDefs) {
+        next[d.key] = toOpen.includes(d.key);
+      }
+      return next;
+    });
+  }, [filterDefs, selectedFilters]);
 
   /* ---------------- render ---------------- */
 
@@ -713,9 +768,7 @@ const Filter = ({ onClose, products = [] }) => {
             key={key}
             title={key}
             isOpen={!!openKeys[key]}
-            setIsOpen={(open) =>
-              setOpenKeys((prev) => ({ ...prev, [key]: open }))
-            }
+            setIsOpen={(open) => handleGroupOpen(key, open)} // enforce max-open logic
           >
             <div className="space-y-2">
               {options.map((opt) => (
