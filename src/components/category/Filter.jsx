@@ -42,6 +42,41 @@ const idFromSlug = (slug) => {
   return parts.length ? parts[parts.length - 1] : null; // keep as string for safe compare
 };
 
+// --- natural / numeric sort helpers ---
+const parseSortNumber = (s = "") => {
+  const str = String(s).toLowerCase();
+
+  // fraction like "3/8 in npt"
+  const frac = str.match(/(\d+)\s*\/\s*(\d+)/);
+  if (frac) {
+    const a = Number(frac[1]);
+    const b = Number(frac[2] || 1);
+    if (b !== 0) return a / b;
+  }
+
+  // decimal or integer like "10 micron", "0.5 μm"
+  const num = str.match(/(\d+(\.\d+)?)/);
+  if (num) return Number(num[1]);
+
+  return NaN;
+};
+
+const naturalOptionSort = (a, b) => {
+  const na = parseSortNumber(a);
+  const nb = parseSortNumber(b);
+
+  // If both have numeric meaning, sort numerically
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) {
+    if (na !== nb) return na - nb;
+  }
+
+  // Fallback: locale "natural" compare for mixed strings
+  return String(a).localeCompare(String(b), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+};
+
 /* ---------------- small UI bits ---------------- */
 
 const ToggleSection = ({ title, children, isOpen, setIsOpen }) => (
@@ -378,7 +413,10 @@ const Filter = ({ onClose, products = [] }) => {
     }
 
     return [...groups.entries()]
-      .map(([key, set]) => ({ key, options: [...set].sort() }))
+      .map(([key, set]) => ({
+        key,
+        options: [...set].sort(naturalOptionSort), // numeric-aware
+      }))
       .sort((a, b) => a.key.localeCompare(b.key));
   }, [scopedProducts, hasCategorySelected]);
 
