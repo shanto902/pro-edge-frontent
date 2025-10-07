@@ -66,7 +66,10 @@ const MainNav = () => {
   return (
     <>
       {/* Main Navigation */}
-      <nav className="bg-[#182B55] text-white sticky top-0 z-40" aria-label="Main navigation">
+      <nav
+        className="bg-[#182B55] text-white sticky top-0 z-40"
+        aria-label="Main navigation"
+      >
         <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
           {/* Logo */}
           <Link to="/" className="flex items-center shrink-0">
@@ -156,7 +159,7 @@ const MainNav = () => {
             )}
 
             {/* Search Bar */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16">
+            <div className="flex-1 flex flex-col items-center  justify-center px-6 pt-16">
               <form
                 className="w-full max-w-md mb-8 relative"
                 onSubmit={handleSearch}

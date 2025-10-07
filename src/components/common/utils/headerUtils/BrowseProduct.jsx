@@ -59,7 +59,6 @@ const BrowseProduct = () => {
     }
   };
 
-  
   return (
     <div
       className="relative group w-full max-w-2xs"
@@ -78,11 +77,15 @@ const BrowseProduct = () => {
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <MenuIcon/>
+        <MenuIcon />
         <span className="text-xs md:text-lg font-medium">Browse Products</span>
-        <RightArrowIcon className={`block md:hidden text-white md:text-blue-900`}/>
+        <RightArrowIcon
+          className={`block md:hidden text-white md:text-blue-900`}
+        />
         <DropdownArrowIcon
-          className={`hidden md:block text-white md:text-blue-900  transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`hidden md:block text-white md:text-blue-900  transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
         />
       </button>
 
@@ -109,7 +112,7 @@ const BrowseProduct = () => {
           } transition-all duration-300`}
         >
           <div className="bg-white rounded-xl shadow-xl py-6 pr-6">
-            <div className="flex flex-col lg:flex-row min-h-[400px]">
+            <div className="flex flex-col lg:flex-row min-h-[500px] ">
               <LeftPanel
                 onCategoryClick={handleCategoryClick}
                 selectedCategory={selectedCategory}
