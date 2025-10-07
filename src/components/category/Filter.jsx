@@ -35,6 +35,45 @@ const safeParseFilters = (v) => {
   return [];
 };
 
+// --- filter display order priority (top → bottom) ---
+const FILTER_PRIORITY = [
+  "Item Type",
+  "Thread Size/Type",
+  "BrandFilter",
+  "Rating µ",
+  "Drain Type",
+  "HP",
+  "Frame Size",
+  "Brand",
+  "RPM Range",
+  "Voltage",
+  "Motor Enclosure",
+  "Amperage",
+  "Overload Type",
+  "Coil Voltage",
+  "Auxiliary Contact",
+  "Overload Protection Type",
+  "Material Type",
+  "HP Max",
+  "CFM",
+  "NPT",
+  "Length in.",
+  "Connection Style",
+  "Tank Size",
+  "Tank Configuration",
+  "Phase",
+  "No. of Stages",
+  "Thread Size",
+];
+
+// case-insensitive position in priority; unknowns go to the end
+const keyRank = (key) => {
+  const i = FILTER_PRIORITY.findIndex(
+    (k) => String(k).toLowerCase() === String(key).toLowerCase()
+  );
+  return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+};
+
 // robust: compare by IDs, not slugs
 const idFromSlug = (slug) => {
   if (!slug) return null;
@@ -412,12 +451,20 @@ const Filter = ({ onClose, products = [] }) => {
       }
     }
 
-    return [...groups.entries()]
-      .map(([key, set]) => ({
-        key,
-        options: [...set].sort(naturalOptionSort), // numeric-aware
-      }))
-      .sort((a, b) => a.key.localeCompare(b.key));
+    const defs = [...groups.entries()].map(([key, set]) => ({
+      key,
+      options: [...set].sort(naturalOptionSort), // numeric-aware option sort
+    }));
+
+    // 👇 custom group order first by your priority list, then A→Z for unknowns
+    defs.sort((a, b) => {
+      const ra = keyRank(a.key);
+      const rb = keyRank(b.key);
+      if (ra !== rb) return ra - rb;
+      return a.key.localeCompare(b.key);
+    });
+
+    return defs;
   }, [scopedProducts, hasCategorySelected]);
 
   /* ---------- URL-backed selections for dynamic filters ---------- */
