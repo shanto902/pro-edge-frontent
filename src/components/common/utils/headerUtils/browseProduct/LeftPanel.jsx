@@ -18,7 +18,7 @@ const LeftPanel = ({ onCategoryClick, selectedCategory }) => {
   return (
     <div className="lg:w-3/7  border-r border-gray-200">
       <h3 className="text-3xl p-6 font-bold text-[#182B55]">Shop Categories</h3>
-      <nav className="space-y-2 overflow-y-auto h-[500px]  px-2">
+      <nav className="space-y-2 overflow-y-auto h-[50vh]  px-2">
         {categories.map((category) => (
           <CategoryItem
             key={category.id}
