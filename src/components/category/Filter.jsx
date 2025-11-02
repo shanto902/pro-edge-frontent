@@ -492,6 +492,12 @@ const Filter = ({ onClose, products = [] }) => {
     setSelectedFilters(readSelectedFromParams());
   }, [readSelectedFromParams]);
 
+  const isBlank = (v) =>
+  v == null ||
+  (typeof v === "string" && v.trim() === "") ||
+  v === "null" ||
+  v === "undefined";
+
   const isSelected = (key, option) =>
     selectedFilters.get(key)?.has(option) || false;
 
@@ -740,6 +746,7 @@ const Filter = ({ onClose, products = [] }) => {
         )}
       </div>
 
+
       {/* Categories */}
       <ToggleSection
         title="Categories"
@@ -747,102 +754,105 @@ const Filter = ({ onClose, products = [] }) => {
         setIsOpen={setIsCategoriesOpen}
       >
         <div className="text-[16px] leading-5 text-[#1748b1] font-medium cursor-pointer flex flex-col gap-y-4">
-          {formattedCategories.map((category) => (
-            <div key={category.id} className="cursor-pointer">
-              <div
-                className="flex items-center"
-                onClick={() => handleParentClick(category.id)}
-              >
-                <Checkbox
-                  id={`parent-${category.id}`}
-                  label={`${category.category_name} (${
-                    category.total_stock || 0
-                  })`}
-                  checked={category.toggle}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    handleCategoryToggle("parent", category.id);
-                  }}
-                />
-                {category.sub_category?.length > 0 && (
-                  <motion.div
-                    animate={{
-                      rotate: expandedParentId === category.id ? 180 : 0,
-                    }}
-                    transition={{ duration: 0.2 }}
-                    className="ml-2"
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M19 9L12 16L5 9"
-                        stroke="#1748b1"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </motion.div>
-                )}
-              </div>
+       {formattedCategories.map((category) => {
+  // Filter out subs with empty names (their counts still included in category.total_stock)
+  const visibleSubs = (category.sub_category || []).filter(
+    (sub) => !isBlank(sub?.subcategory_name)
+  );
 
-              <AnimatePresence>
-                {expandedParentId === category.id &&
-                  category.sub_category?.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden ml-6"
-                    >
-                      <div className="space-y-3 mt-2">
-                        {category.sub_category?.map((sub) => (
-                          <div key={sub.id}>
-                            <Checkbox
-                              id={`sub-${sub.id}`}
-                              label={`${sub.subcategory_name} (${
-                                sub.total_stock || 0
-                              })`}
-                              checked={sub.toggle}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                handleCategoryToggle(
-                                  "sub",
-                                  sub.id,
-                                  category.id
-                                );
-                              }}
-                            />
-                            {sub.child_category?.length > 0 && (
-                              <div className="ml-6 mt-2 space-y-2">
-                                {sub.child_category?.map((child) => (
-                                  <Checkbox
-                                    key={child.id}
-                                    id={`child-${child.id}`}
-                                    label={`${child.child_category_name} (${
-                                      child.total_stock || 0
-                                    })`}
-                                    checked={child.toggle}
-                                    onChange={(e) => {
-                                      e.stopPropagation();
-                                      handleCategoryToggle(
-                                        "child",
-                                        child.id,
-                                        sub.id
-                                      );
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
+  return (
+    <div key={category.id} className="cursor-pointer">
+      <div
+        className="flex items-center"
+        onClick={() => handleParentClick(category.id)}
+      >
+        <Checkbox
+          id={`parent-${category.id}`}
+          label={`${category.category_name} (${category.total_stock || 0})`}
+          checked={category.toggle}
+          onChange={(e) => {
+            e.stopPropagation();
+            handleCategoryToggle("parent", category.id);
+          }}
+        />
+        {visibleSubs.length > 0 && (
+          <motion.div
+            animate={{
+              rotate: expandedParentId === category.id ? 180 : 0,
+            }}
+            transition={{ duration: 0.2 }}
+            className="ml-2"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M19 9L12 16L5 9"
+                stroke="#1748b1"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </motion.div>
+        )}
+      </div>
+
+      <AnimatePresence>
+        {expandedParentId === category.id && visibleSubs.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden ml-6"
+          >
+            <div className="space-y-3 mt-2">
+              {visibleSubs.map((sub) => {
+                // Filter out children with empty names (their counts still included in sub.total_stock)
+                const visibleChildren = (sub.child_category || []).filter(
+                  (child) => !isBlank(child?.child_category_name)
+                );
+
+                return (
+                  <div key={sub.id}>
+                    <Checkbox
+                      id={`sub-${sub.id}`}
+                      label={`${sub.subcategory_name} (${sub.total_stock || 0})`}
+                      checked={sub.toggle}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleCategoryToggle("sub", sub.id, category.id);
+                      }}
+                    />
+
+                    {visibleChildren.length > 0 && (
+                      <div className="ml-6 mt-2 space-y-2">
+                        {visibleChildren.map((child) => (
+                          <Checkbox
+                            key={child.id}
+                            id={`child-${child.id}`}
+                            label={`${child.child_category_name} (${
+                              child.total_stock || 0
+                            })`}
+                            checked={child.toggle}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleCategoryToggle("child", child.id, sub.id);
+                            }}
+                          />
                         ))}
                       </div>
-                    </motion.div>
-                  )}
-              </AnimatePresence>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+})}
+
         </div>
       </ToggleSection>
 

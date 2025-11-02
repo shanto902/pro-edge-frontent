@@ -5,7 +5,7 @@ import Pagination from "../../components/category/Pagination";
 import { IoFilterSharp } from "react-icons/io5";
 
 import { useProductContext } from "../../context/ProductContext";
-import PageHeader from "../../components/common/utils/banner/SubPageHeader";
+
 import bgImage from "../../assets/images/cart.png";
 import { CartContext } from "../../context/CartContext";
 import { Helmet } from "react-helmet-async";
