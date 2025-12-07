@@ -1,3 +1,4 @@
+// App.jsx
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 // Components
@@ -17,23 +18,18 @@ import Auth from "./layouts/Auth";
 import CartPage from "./pages/cart/Cart";
 import Checkout from "./pages/checkout/Checkout";
 import WishList from "./pages/wishlist/WishList";
-
-//context provider
-import { ProductProvider } from "./context/ProductContext";
-import { CartProvider } from "./context/CartContext";
-import { CategoryProvider } from "./context/CategoryContext";
 import OrderTable from "./pages/order/OrdersTable";
 import TrackOrderPage from "./pages/order/TrackOrderPage";
-import { AuthProvider } from "./context/AuthContext";
-import { OrderProvider } from "./context/OrderContext";
 import OrderDetailsPage from "./pages/order/OrderDetailsPage";
 import PrivateRoute from "./components/privaterroute/PrivateRoute";
-import { FaqProvider } from "./context/FaqContext";
 import FAQPage from "./pages/FAQ/FAQPage";
 import UserProfile from "./pages/user/UserProfile";
 import NotFoundPage from "./pages/404/NotFoundPage";
 import Policies from "./pages/tech-help/Policies";
 import Jsonit from "./pages/convert/Jsonit";
+
+// Only top-level auth context here
+import { AuthProvider } from "./context/AuthContext";
 
 const router = createBrowserRouter([
   {
@@ -56,9 +52,9 @@ const router = createBrowserRouter([
       { path: "order-details", Component: OrderDetailsPage },
       { path: "return-policy", Component: Policies },
       { path: "payment-policy", Component: Policies },
-      { path: "terms-of-use", Component: Policies },      
-      { path: "shipping-policy", Component: Policies },   
-      { path: "json-it", Component: Jsonit },   
+      { path: "terms-of-use", Component: Policies },
+      { path: "shipping-policy", Component: Policies },
+      { path: "json-it", Component: Jsonit },
       {
         Component: PrivateRoute,
         children: [
@@ -66,7 +62,6 @@ const router = createBrowserRouter([
           { path: "profile", Component: UserProfile },
         ],
       },
-      // Fallback route
       { path: "*", Component: NotFoundPage },
     ],
   },
@@ -83,20 +78,9 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  
   return (
     <AuthProvider>
-      <CategoryProvider>
-        <ProductProvider>
-          <CartProvider>
-            <OrderProvider>
-              <FaqProvider>
-                <RouterProvider router={router} />
-              </FaqProvider>
-            </OrderProvider>
-          </CartProvider>
-        </ProductProvider>
-      </CategoryProvider>
+      <RouterProvider router={router} />
     </AuthProvider>
   );
 }

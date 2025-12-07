@@ -177,7 +177,10 @@ const MobilePanel = ({
                                   className="flex justify-between items-center text-sm py-2 px-3 rounded-md hover:bg-gray-100 transition text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-gray-100"
                                 >
                                   <span className="truncate">
-                                    {child.child_category_name}
+                                   {!child?.child_category_name?.trim()
+  ? "Shop All"
+  : child.child_category_name}
+
                                   </span>
                                   <span className="text-xs text-blue-500 bg-gray-100 px-2 py-1 rounded-full">
                                     {child.total_stock}

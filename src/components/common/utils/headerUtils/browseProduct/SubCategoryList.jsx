@@ -49,7 +49,7 @@ const SubcategoryList = ({ title, items, selectedCategoryId, closeBar }) => {
       </h3>
 
       {/* Shop All only if we actually have visible (named) sub-items */}
-      {hasNamedItems && (
+     
         <h3 className="font-semibold" onClick={closeBar}>
           <Link
             to={`/products?sub_category=${formatCategoryName(title)}-${selectedCategoryId}`}
@@ -58,7 +58,7 @@ const SubcategoryList = ({ title, items, selectedCategoryId, closeBar }) => {
             Shop All
           </Link>
         </h3>
-      )}
+    
 
       {/* Visible sub-items (hide empty-name rows) */}
       {hasNamedItems && (

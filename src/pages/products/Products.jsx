@@ -131,6 +131,12 @@ const Category = () => {
         .filter(Boolean)
         .join("-");
 
+        console.log("Generated slugs:", {
+          parentSlug,
+          subSlug,
+          childSlug,
+          productSlug,
+        });
       return {
         ...product,
         slug: product.slug || productSlug,

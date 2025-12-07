@@ -1,17 +1,30 @@
-import { Outlet } from 'react-router-dom'
+// src/layouts/Root.jsx
+import { Outlet } from "react-router-dom";
+
+import { CategoryProvider } from "../context/CategoryContext";
+import { ProductProvider } from "../context/ProductContext";
+import { CartProvider } from "../context/CartContext";
+import { OrderProvider } from "../context/OrderContext";
+import { FaqProvider } from "../context/FaqContext";
 import Header from '../components/common/header/Header'
 import Footer from '../components/common/footer/Footer'
 
-const Root = () => {
-  return (
-    <>
-    <Header />
-      <main>
-        <Outlet />
-      </main>
-    <Footer />
-    </>
-  )
-}
 
-export default Root
+export default function Root() {
+  return (
+    <CategoryProvider>
+      <ProductProvider>
+        <CartProvider>
+          <OrderProvider>
+            <FaqProvider>
+              {/* Your common layout */}
+              <Header />
+              <Outlet />
+              <Footer />
+            </FaqProvider>
+          </OrderProvider>
+        </CartProvider>
+      </ProductProvider>
+    </CategoryProvider>
+  );
+}
