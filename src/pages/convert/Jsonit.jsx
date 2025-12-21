@@ -5,7 +5,6 @@ const Jsonit = () => {
   const [resultMessage, setResultMessage] = useState("");
   const [jsonUrl, setJsonUrl] = useState("");
 
-  /** @type {React.MutableRefObject<HTMLInputElement|null>} */
   const fileInputRef = useRef(null);
 
   const sampleCsv = `product_category,title,variation_name,sku_code,made_in,features,filters,regular_price,offer_price,product_details,product_info,variation_value,image_url
